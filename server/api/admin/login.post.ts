@@ -1,6 +1,5 @@
 import { createRequire } from 'module'
-const _require = createRequire(import.meta.url)
-const bcrypt = _require('bcryptjs')
+import bcrypt from 'bcryptjs'
 import { getAdminByEmail, updateAdminLastLogin } from '~/server/db/index'
 import { signAdminToken, setAdminCookie } from '~/server/utils/auth'
 export default defineEventHandler(async (event) => {

@@ -17,6 +17,7 @@ export default defineNuxtConfig({
     appUrl: process.env.APP_URL || 'http://localhost:3000',
     // Public — exposed to the browser
     public: {
+      databaseUrl: process.env.DATABASE_URL || '',
       appUrl: process.env.APP_URL || 'https://grantportalngn.vercel.app',
       siteName: process.env.SITE_NAME || 'GrantPortal',
       siteDescription: process.env.SITE_DESCRIPTION || 'Funding ideas that matter. Apply for grants supporting community development, education, environment, health, arts, and economic opportunity.',

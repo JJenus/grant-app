@@ -69,7 +69,7 @@ export async function sendSubmissionConfirmation(to: string, firstName: string) 
           You can expect to hear from us within <strong>60 days of the deadline</strong>. Every applicant receives a response.
         </p>
         <p style="color: #bbb; font-size: 12px; font-family: sans-serif; border-top: 1px solid #f0ede6; padding-top: 24px;">
-          Questions? Reply to this email or contact grants@example.com
+          Questions? Reply to this email or contact grants@grantsportalngn.com
         </p>
       </div>
     `

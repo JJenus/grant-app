@@ -1,8 +1,7 @@
 import pg from 'pg'
 import { createRequire } from 'module'
 
-const _require = createRequire(import.meta.url)
-const bcrypt = _require('bcryptjs')
+import bcrypt from 'bcryptjs'
 
 const { Pool } = pg
 
