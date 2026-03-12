@@ -1,0 +1,39 @@
+export default defineNuxtConfig({
+  devtools: { enabled: true },
+  modules: ['@nuxt/ui', '@pinia/nuxt'],
+  css: ['~/assets/css/main.css'],
+  colorMode: { preference: 'light' },
+
+  runtimeConfig: {
+    // Server-only
+    databaseUrl: process.env.DATABASE_URL || '',
+    jwtSecret: process.env.JWT_SECRET || 'change-this-secret-in-production-min-32-chars',
+    adminPassword: process.env.ADMIN_PASSWORD || 'admin123',
+    smtpHost: process.env.SMTP_HOST || '',
+    smtpPort: process.env.SMTP_PORT || '587',
+    smtpUser: process.env.SMTP_USER || '',
+    smtpPass: process.env.SMTP_PASS || '',
+    smtpFrom: process.env.SMTP_FROM || 'grants@example.com',
+    appUrl: process.env.APP_URL || 'http://localhost:3000',
+    // Public — exposed to the browser
+    public: {
+      appUrl: process.env.APP_URL || 'https://grantportalngn.vercel.app',
+      siteName: process.env.SITE_NAME || 'GrantPortal',
+      siteDescription: process.env.SITE_DESCRIPTION || 'Funding ideas that matter. Apply for grants supporting community development, education, environment, health, arts, and economic opportunity.',
+    }
+  },
+
+  // Global default SEO tags — pages override as needed
+  app: {
+    head: {
+      charset: 'utf-8',
+      viewport: 'width=device-width, initial-scale=1',
+      htmlAttrs: { lang: 'en' },
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+      ],
+    }
+  },
+
+  compatibilityDate: '2024-04-03'
+})

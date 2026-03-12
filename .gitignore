@@ -1,0 +1,9 @@
+node_modules
+.nuxt
+.output
+.env
+dist
+*.db
+*.db-journal
+.DS_Store
+Thumbs.db
