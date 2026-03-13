@@ -5,3 +5,4 @@ export default defineEventHandler(async (event) => {
   if (!admin) throw createError({ statusCode: 401 })
   return await getSettings()
 })
+

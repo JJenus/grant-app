@@ -10,7 +10,7 @@ let _pool: InstanceType<typeof Pool> | null = null
 function getPool() {
   if (_pool) return _pool
   const config = useRuntimeConfig()
-  console.log(config)
+  
   if (!config.databaseUrl) throw new Error('DATABASE_URL is not set in .env')
   _pool = new Pool({ connectionString: config.databaseUrl })
   return _pool
@@ -157,12 +157,13 @@ export async function submitApplication(token: string) {
   )
 }
 
-export async function listApplications(opts: { status?: string; search?: string; page: number; limit: number }) {
-  const conditions = ["status != 'draft'"]
+export async function listApplications(opts: { status?: string; search?: string; page: number; limit: number; draftsOnly?: boolean }) {
+  // draftsOnly=true shows only drafts; default hides drafts
+  const conditions = opts.draftsOnly ? ["status='draft'"] : ["status != 'draft'"]
   const params: any[] = []
   let i = 1
 
-  if (opts.status && opts.status !== 'all') {
+  if (!opts.draftsOnly && opts.status && opts.status !== 'all') {
     conditions.push(`status=$${i++}`)
     params.push(opts.status)
   }
@@ -178,7 +179,7 @@ export async function listApplications(opts: { status?: string; search?: string;
   const total = parseInt(totalRow?.n ?? '0')
   const offset = (opts.page - 1) * opts.limit
   const rows = await query(
-    `SELECT * FROM applications ${where} ORDER BY submitted_at DESC NULLS LAST LIMIT $${i} OFFSET $${i+1}`,
+    `SELECT * FROM applications ${where} ORDER BY updated_at DESC LIMIT $${i} OFFSET $${i+1}`,
     [...params, opts.limit, offset]
   )
   return { applications: rows.map(rowToApp), total }
@@ -196,6 +197,8 @@ export async function getStats() {
   const map = Object.fromEntries(counts.map((r: any) => [r.status, parseInt(r.n)]))
   const totalRow = await queryOne("SELECT COUNT(*) as n FROM applications WHERE status != 'draft'")
   const sumRow = await queryOne("SELECT COALESCE(SUM(amount_requested),0) as s FROM applications WHERE status != 'draft'")
+  const draftRow = await queryOne("SELECT COUNT(*) as n FROM applications WHERE status='draft'")
+  const deviceRow = await queryOne("SELECT COUNT(*) as n FROM device_sessions")
   return {
     total: parseInt(totalRow?.n ?? '0'),
     submitted: map['submitted'] || 0,
@@ -203,6 +206,8 @@ export async function getStats() {
     approved: map['approved'] || 0,
     rejected: map['rejected'] || 0,
     totalRequested: parseFloat(sumRow?.s ?? '0'),
+    drafts: parseInt(draftRow?.n ?? '0'),
+    devices: parseInt(deviceRow?.n ?? '0'),
   }
 }
 
@@ -273,4 +278,153 @@ export async function setSetting(key: string, value: string) {
     'INSERT INTO settings (key, value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value=$2',
     [key, value]
   )
+}
+
+
+// ─── Device session tracking ──────────────────────────────────────────────────
+
+export async function migrateDeviceSessions() {
+  const pool = getPool()
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS device_sessions (
+      id              TEXT PRIMARY KEY,
+      device_id       TEXT NOT NULL,          -- generated UUID, stored in localStorage
+      application_id  TEXT,                   -- linked after first draft save
+      ip              TEXT,
+      user_agent      TEXT,
+      browser         TEXT,
+      os              TEXT,
+      screen          TEXT,
+      language        TEXT,
+      timezone        TEXT,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_ds_device_id ON device_sessions(device_id);
+    CREATE INDEX IF NOT EXISTS idx_ds_app_id    ON device_sessions(application_id);
+
+    CREATE TABLE IF NOT EXISTS device_locations (
+      id              TEXT PRIMARY KEY,
+      device_id       TEXT NOT NULL,
+      session_id      TEXT NOT NULL,
+      latitude        NUMERIC NOT NULL,
+      longitude       NUMERIC NOT NULL,
+      accuracy        NUMERIC,
+      ip              TEXT,
+      recorded_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_dl_device_id ON device_locations(device_id);
+    CREATE INDEX IF NOT EXISTS idx_dl_session_id ON device_locations(session_id);
+  `)
+}
+
+export async function upsertDeviceSession(data: {
+  deviceId: string
+  ip: string
+  userAgent: string
+  browser: string
+  os: string
+  screen: string
+  language: string
+  timezone: string
+}) {
+  // One session row per device — update device info on every ping
+  const existing = await queryOne(
+    'SELECT id FROM device_sessions WHERE device_id=$1', [data.deviceId]
+  )
+  if (existing) {
+    await query(`
+      UPDATE device_sessions SET
+        ip=$1, user_agent=$2, browser=$3, os=$4,
+        screen=$5, language=$6, timezone=$7, updated_at=NOW()
+      WHERE device_id=$8`,
+      [data.ip, data.userAgent, data.browser, data.os,
+       data.screen, data.language, data.timezone, data.deviceId]
+    )
+    return existing.id as string
+  }
+  const id = crypto.randomUUID()
+  await query(`
+    INSERT INTO device_sessions
+      (id, device_id, ip, user_agent, browser, os, screen, language, timezone)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+    [id, data.deviceId, data.ip, data.userAgent, data.browser,
+     data.os, data.screen, data.language, data.timezone]
+  )
+  return id
+}
+
+export async function linkSessionToApplication(deviceId: string, applicationId: string) {
+  await query(
+    'UPDATE device_sessions SET application_id=$1 WHERE device_id=$2 AND application_id IS NULL',
+    [applicationId, deviceId]
+  )
+}
+
+export async function recordDeviceLocation(data: {
+  deviceId: string
+  sessionId: string
+  latitude: number
+  longitude: number
+  accuracy?: number
+  ip: string
+}) {
+  const id = crypto.randomUUID()
+  await query(`
+    INSERT INTO device_locations (id, device_id, session_id, latitude, longitude, accuracy, ip)
+    VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+    [id, data.deviceId, data.sessionId, data.latitude, data.longitude,
+     data.accuracy ?? null, data.ip]
+  )
+}
+
+export async function getDeviceHistory(deviceId: string) {
+  const session = await queryOne(
+    'SELECT * FROM device_sessions WHERE device_id=$1', [deviceId]
+  )
+  const locations = await query(
+    'SELECT * FROM device_locations WHERE device_id=$1 ORDER BY recorded_at DESC LIMIT 100',
+    [deviceId]
+  )
+  return { session, locations }
+}
+
+export async function listDeviceSessions(opts: { search?: string; page: number; limit: number }) {
+  const params: any[] = []
+  let i = 1
+  const conditions: string[] = []
+
+  if (opts.search) {
+    const s = '%' + opts.search + '%'
+    conditions.push(`(ds.ip ILIKE $${i} OR ds.browser ILIKE $${i+1} OR ds.os ILIKE $${i+2} OR a.email ILIKE $${i+3} OR a.first_name ILIKE $${i+4})`)
+    params.push(s, s, s, s, s)
+    i += 5
+  }
+
+  const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : ''
+  const totalRow = await queryOne(
+    `SELECT COUNT(*) as n FROM device_sessions ds LEFT JOIN applications a ON a.id = ds.application_id ${where}`,
+    params
+  )
+  const total = parseInt(totalRow?.n ?? '0')
+  const offset = (opts.page - 1) * opts.limit
+
+  const rows = await query(`
+    SELECT
+      ds.*,
+      a.email       AS app_email,
+      a.first_name  AS app_first_name,
+      a.last_name   AS app_last_name,
+      a.status      AS app_status,
+      a.project_title AS app_project_title,
+      (SELECT COUNT(*) FROM device_locations dl WHERE dl.device_id = ds.device_id) AS location_count,
+      (SELECT recorded_at FROM device_locations dl WHERE dl.device_id = ds.device_id ORDER BY recorded_at DESC LIMIT 1) AS last_location_at
+    FROM device_sessions ds
+    LEFT JOIN applications a ON a.id = ds.application_id
+    ${where}
+    ORDER BY ds.updated_at DESC
+    LIMIT $${i} OFFSET $${i+1}`,
+    [...params, opts.limit, offset]
+  )
+  return { sessions: rows, total }
 }

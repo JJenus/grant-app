@@ -86,7 +86,7 @@ export async function sendSubmissionConfirmation(
     grantCategory: data.grantCategory || '—',
     amountRequested: data.amountRequested || '—',
     submittedAt: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-    contactEmail: config.smtpFrom || 'grants@grantslortalngn.com',
+    contactEmail: 'grants@grantslortalngn.com',
     year: String(new Date().getFullYear()),
   })
 
@@ -133,3 +133,4 @@ export async function testMailjet(toEmail) {
     console.error('Hardcoded test FAILED:', err);
   }
 }
+

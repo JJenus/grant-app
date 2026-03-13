@@ -98,7 +98,7 @@
 <script setup lang="ts">
 useSeo({
   title: 'About',
-  description: 'Learn about GrantPortal — our mission, review process, past recipients, and how we invest in ideas that create lasting community impact.',
+  description: 'Learn about GrantPortal — our mission, review process, past recipients, and how we invest in ideas worth ₦250M that create lasting community impact.',
   path: '/about',
 })
 
@@ -135,3 +135,4 @@ const faqs = computed(() => reactive([
   { q: 'Is my location information collected?', a: 'With your permission, we may collect your approximate geographic location to better understand where our grants have impact. This is optional and you can decline the browser prompt.', open: false },
 ]))
 </script>
+

@@ -32,3 +32,4 @@ export function useCurrency() {
 
   return { symbol, code, name, format, fetchSettings }
 }
+

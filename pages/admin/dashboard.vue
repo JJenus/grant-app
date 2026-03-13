@@ -1,10 +1,16 @@
 <template>
   <div>
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-      <div v-for="card in statCards" :key="card.label" class="p-4 sm:p-5 rounded-xl border bg-white" style="border-color: #e5e5e0">
+      <component
+        :is="card.link ? 'NuxtLink' : 'div'"
+        v-for="card in statCards" :key="card.label"
+        :to="card.link || undefined"
+        class="p-4 sm:p-5 rounded-xl border bg-white transition-all"
+        :class="card.link ? 'hover:shadow-md hover:-translate-y-0.5' : ''"
+        style="border-color: #e5e5e0">
         <p class="text-xs font-semibold uppercase tracking-wide mb-1.5 sm:mb-2 leading-tight" style="color: #bbb">{{ card.label }}</p>
         <p class="text-2xl sm:text-3xl" style="font-family: var(--font-display)" :style="{ color: card.color || 'var(--color-forest)' }">{{ card.value }}</p>
-      </div>
+      </component>
     </div>
 
     <div class="grid sm:grid-cols-3 gap-4 mb-6 sm:mb-8">
@@ -93,10 +99,10 @@ const stats = ref<Record<string, number>>({})
 const recentApps = ref<any[]>([])
 
 const statCards = computed(() => [
-  { label: 'Total Applications', value: stats.value.total ?? '—' },
-  { label: 'Awaiting Review', value: stats.value.submitted ?? '—', color: '#9a6700' },
-  { label: 'Approved', value: stats.value.approved ?? '—', color: '#1e6b3a' },
-  { label: 'Funding Requested', value: format(stats.value.totalRequested, true) },
+  { label: 'Total Applications', value: stats.value.total ?? '—', link: '/admin/applications' },
+  { label: 'Awaiting Review', value: stats.value.submitted ?? '—', color: '#9a6700', link: '/admin/applications?status=submitted' },
+  { label: 'Incomplete Drafts', value: stats.value.drafts ?? '—', color: '#555', link: '/admin/drafts' },
+  { label: 'Funding Requested', value: format(stats.value.totalRequested, true), link: null },
 ])
 
 const statusBreakdown = computed(() => [
@@ -119,3 +125,4 @@ onMounted(async () => {
   finally { loading.value = false }
 })
 </script>
+

@@ -58,3 +58,4 @@ export function useSeo(opts: SeoOptions) {
     ],
   })
 }
+

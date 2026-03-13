@@ -9,3 +9,4 @@ export default defineEventHandler(async (event) => {
   const result = await listApplications({ status: q.status, search: q.search, page, limit })
   return { ...result, page, limit }
 })
+

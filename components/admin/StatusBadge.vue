@@ -17,3 +17,4 @@ const styleMap: Record<string, string> = {
 
 const style = computed(() => styleMap[props.status || ''] || styleMap.draft)
 </script>
+

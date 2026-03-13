@@ -87,10 +87,16 @@ export const useApplicationStore = defineStore('application', {
       if (!this.form.email) return
       this.isSaving = true
       try {
+        const isFirstSave = !this.token
         const method = this.token ? 'PUT' : 'POST'
         const url = this.token ? `/api/applications/${this.token}` : '/api/applications'
         const res: any = await $fetch(url, { method, body: { ...this.form } })
-        if (!this.token && res.token) this.token = res.token
+        if (isFirstSave && res.id) {
+          this.token = res.token
+          // Link this device to the application so tracking data is attributed
+          const { linkToApplication } = useDeviceTracking()
+          linkToApplication(res.id).catch(() => {})
+        }
         this.lastSaved = new Date()
       } catch (e) {
         console.error('Save draft failed', e)
@@ -129,3 +135,4 @@ export const useApplicationStore = defineStore('application', {
     goToStep(n: number) { this.currentStep = n },
   }
 })
+

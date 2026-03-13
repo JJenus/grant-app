@@ -5,3 +5,4 @@ export default defineEventHandler(async (event) => {
   if (!app) throw createError({ statusCode: 404, statusMessage: 'Not found' })
   return app
 })
+

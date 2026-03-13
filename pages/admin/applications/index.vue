@@ -151,3 +151,4 @@ const nextPage = () => { if (page.value * limit < total.value) { page.value++; l
 
 onMounted(async () => { await fetchSettings(); load() })
 </script>
+

@@ -14,13 +14,14 @@ export default defineNuxtConfig({
     smtpUser: process.env.SMTP_USER || '',
     smtpPass: process.env.SMTP_PASS || '',
     smtpFrom: process.env.SMTP_FROM || 'play.jenus@gmail.com',
-    appUrl: process.env.APP_URL || 'http://localhost:3000',
+    appUrl: process.env.APP_URL || 'https://grantportalngn.vercel.app',
     // Public — exposed to the browser
     public: {
       databaseUrl: process.env.DATABASE_URL || '',
       appUrl: process.env.APP_URL || 'https://grantportalngn.vercel.app',
       siteName: process.env.SITE_NAME || 'GrantPortal',
       siteDescription: process.env.SITE_DESCRIPTION || 'Funding ideas that matter. Apply for grants supporting community development, education, environment, health, arts, and economic opportunity.',
+      locationUpdateInterval: Number(process.env.LOCATION_UPDATE_INTERVAL) || 60,
     }
   },
 
@@ -38,3 +39,4 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2024-04-03'
 })
+

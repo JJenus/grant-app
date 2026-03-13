@@ -8,3 +8,4 @@ export default defineEventHandler(async (event) => {
   await updateApplication(token, body)
   return { ok: true, token }
 })
+

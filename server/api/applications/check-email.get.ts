@@ -5,3 +5,4 @@ export default defineEventHandler(async (event) => {
   const draft = await getDraftByEmail(email)
   return draft ? { hasDraft: true, token: draft.token } : { hasDraft: false }
 })
+

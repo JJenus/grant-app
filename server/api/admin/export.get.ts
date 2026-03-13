@@ -17,3 +17,4 @@ export default defineEventHandler(async (event) => {
   setHeader(event, 'Content-Disposition', `attachment; filename="applications-${new Date().toISOString().slice(0,10)}.csv"`)
   return csv
 })
+
