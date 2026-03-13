@@ -6,7 +6,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     // Server-only
-    databaseUrl: process.env.DATABASE_URL || '',
+    databaseUrl: process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_qWo6Zr1miFau@ep-proud-sea-agcg2e5i-pooler.c-2.eu-central-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require',
     jwtSecret: process.env.JWT_SECRET || 'change-this-secret-in-production-min-32-chars',
     adminPassword: process.env.ADMIN_PASSWORD || 'admin123',
     smtpHost: process.env.SMTP_HOST || '',

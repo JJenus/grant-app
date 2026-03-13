@@ -10,6 +10,7 @@ let _pool: InstanceType<typeof Pool> | null = null
 function getPool() {
   if (_pool) return _pool
   const config = useRuntimeConfig()
+  console.log(config)
   if (!config.databaseUrl) throw new Error('DATABASE_URL is not set in .env')
   _pool = new Pool({ connectionString: config.databaseUrl })
   return _pool
