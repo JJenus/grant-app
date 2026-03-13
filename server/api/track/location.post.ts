@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     event.node.req.socket?.remoteAddress ||
     'unknown'
 
-  await recordDeviceLocation({ deviceId, sessionId, latitude, longitude, accuracy, ip })
+  const result = await recordDeviceLocation({ deviceId, sessionId, latitude, longitude, accuracy, ip })
 
-  return { ok: true }
+  return { ok: true, result } // 'saved' or 'skipped'
 })

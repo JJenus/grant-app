@@ -244,7 +244,7 @@ import { useApplicationStore } from '~/stores/application'
 
 useSeo({
   title: 'Apply for a Grant',
-  description: 'Submit your grant application online. No account needed — save your progress and resume anytime with just your email address.',
+  description: 'Submit your grant application online, upto ₦10M for each individual. No login needed - save your progress and resume anytime with just your email address.',
   path: '/apply',
 })
 

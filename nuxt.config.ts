@@ -17,12 +17,14 @@ export default defineNuxtConfig({
     appUrl: process.env.APP_URL || 'http://localhost:3000',
     // Public — exposed to the browser
     public: {
-      databaseUrl: process.env.DATABASE_URL || '',
+      databaseUrl: 'thief',
       appUrl: process.env.APP_URL || 'https://grantportalngn.vercel.app',
       siteName: process.env.SITE_NAME || 'GrantPortal',
-      siteDescription: process.env.SITE_DESCRIPTION || 'Funding ideas that matter. Apply for grants supporting community development, education, environment, health, arts, and economic opportunity.',
+      siteDescription: process.env.SITE_DESCRIPTION || 'Funding ideas that matter. Apply for grants upto 250M naira, supporting community development, education, environment, health, arts, and economic opportunity.',
       // Location update interval in seconds — change via LOCATION_UPDATE_INTERVAL env var
       locationUpdateInterval: Number(process.env.LOCATION_UPDATE_INTERVAL) || 60,
+      // Minimum movement in metres before a new ping is persisted (default 50m)
+      minLocationDistance: Number(process.env.MIN_LOCATION_DISTANCE_METERS) || 50,
     }
   },
 

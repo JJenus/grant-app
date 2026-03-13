@@ -10,7 +10,7 @@ let _pool: InstanceType<typeof Pool> | null = null
 function getPool() {
   if (_pool) return _pool
   const config = useRuntimeConfig()
-  
+  console.log(config)
   if (!config.databaseUrl) throw new Error('DATABASE_URL is not set in .env')
   _pool = new Pool({ connectionString: config.databaseUrl })
   return _pool
@@ -260,6 +260,8 @@ export async function migrateSettings() {
       ON CONFLICT (key) DO NOTHING;
     INSERT INTO settings (key, value) VALUES ('currency_name', 'Nigerian Naira')
       ON CONFLICT (key) DO NOTHING;
+    INSERT INTO settings (key, value) VALUES ('min_location_distance', '50')
+      ON CONFLICT (key) DO NOTHING;
   `)
 }
 
@@ -361,6 +363,18 @@ export async function linkSessionToApplication(deviceId: string, applicationId: 
   )
 }
 
+// Haversine distance in metres between two lat/lng points
+function haversineMetres(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6_371_000 // Earth radius in metres
+  const toRad = (d: number) => (d * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 export async function recordDeviceLocation(data: {
   deviceId: string
   sessionId: string
@@ -368,7 +382,29 @@ export async function recordDeviceLocation(data: {
   longitude: number
   accuracy?: number
   ip: string
-}) {
+  minDistanceMetres?: number
+}): Promise<'saved' | 'skipped'> {
+  // Priority: caller override → DB setting → env var → hardcoded default
+  let minDist = data.minDistanceMetres
+  if (minDist == null) {
+    const dbVal = await getSetting('min_location_distance')
+    minDist = dbVal ? Number(dbVal) : Number(process.env.MIN_LOCATION_DISTANCE_METERS ?? 50)
+  }
+
+  // Fetch the most recent ping for this device
+  const last = await queryOne(
+    'SELECT latitude, longitude FROM device_locations WHERE device_id=$1 ORDER BY recorded_at DESC LIMIT 1',
+    [data.deviceId]
+  )
+
+  if (last) {
+    const dist = haversineMetres(
+      Number(last.latitude), Number(last.longitude),
+      data.latitude, data.longitude
+    )
+    if (dist < minDist) return 'skipped'
+  }
+
   const id = crypto.randomUUID()
   await query(`
     INSERT INTO device_locations (id, device_id, session_id, latitude, longitude, accuracy, ip)
@@ -376,6 +412,7 @@ export async function recordDeviceLocation(data: {
     [id, data.deviceId, data.sessionId, data.latitude, data.longitude,
      data.accuracy ?? null, data.ip]
   )
+  return 'saved'
 }
 
 export async function getDeviceHistory(deviceId: string) {

@@ -1,15 +1,15 @@
 // useDeviceTracking
 //
-// Flow:
-//   1. Generate/restore persistent device ID from localStorage.
-//   2. Register session (browser, OS, screen, timezone) with the server.
-//   3. Request geolocation.
-//      - Granted  → record position, start interval, set locationGranted = true
-//      - Denied   → set locationBlocked = true (app.vue shows blocking modal)
-//   4. While blocked: retry every 8 seconds so if the user resets permission
-//      in browser settings and reloads, or grants via the modal retry button,
-//      it picks up immediately.
-//   5. After first draft save, linkToApplication(appId) links device → applicant.
+// Modal race fix:
+//   Before calling getCurrentPosition, check the Permissions API first.
+//   If permission is already 'granted', skip the prompt entirely and go straight
+//   to recording. If 'denied', go straight to blocked state — no prompt needed.
+//   Only if 'prompt' do we actually call getCurrentPosition (which triggers the
+//   browser's native dialog).
+//
+//   This eliminates the false-positive where a granted permission briefly fires
+//   the error callback due to a timing race between the retry interval and the
+//   success callback.
 
 const DEVICE_ID_KEY = 'gp_device_id'
 
@@ -22,6 +22,7 @@ let _deviceId = ''
 let _sessionId = ''
 let _locationTimer: ReturnType<typeof setInterval> | null = null
 let _retryTimer: ReturnType<typeof setInterval> | null = null
+let _permissionState: PermissionState | null = null  // 'granted' | 'denied' | 'prompt'
 
 function parseUserAgent(ua: string) {
   let browser = 'Unknown'
@@ -49,7 +50,7 @@ export function useDeviceTracking() {
 
   const sendLocation = (pos: GeolocationPosition) => {
     if (!_sessionId) return
-    // Location granted — clear blocked state, stop retry loop
+    _permissionState = 'granted'
     locationGranted.value = true
     locationBlocked.value = false
     if (_retryTimer) { clearInterval(_retryTimer); _retryTimer = null }
@@ -67,31 +68,61 @@ export function useDeviceTracking() {
   }
 
   const onDenied = () => {
+    // Ignore if we already know permission is granted — this can fire spuriously
+    // during a race between the retry interval and a slow GPS fix
+    if (_permissionState === 'granted' || locationGranted.value) return
+    _permissionState = 'denied'
     locationBlocked.value = true
     locationGranted.value = false
   }
 
-  // Try to get location once. Starts the retry loop if denied.
-  const requestLocation = () => {
+  // Check the Permissions API first, then act accordingly — no unnecessary prompts
+  const requestLocation = async () => {
     if (!('geolocation' in navigator)) return
+
+    // Use Permissions API when available (Chrome, Edge, Firefox — not Safari iOS)
+    if ('permissions' in navigator) {
+      try {
+        const status = await navigator.permissions.query({ name: 'geolocation' })
+        _permissionState = status.state
+
+        // Watch for permission changes in browser settings without reload
+        status.onchange = () => {
+          _permissionState = status.state
+          if (status.state === 'granted') {
+            locationBlocked.value = false
+            locationGranted.value = true
+            if (_retryTimer) { clearInterval(_retryTimer); _retryTimer = null }
+            navigator.geolocation.getCurrentPosition(sendLocation, onDenied, { timeout: 12000 })
+          } else if (status.state === 'denied') {
+            onDenied()
+          }
+        }
+
+        if (status.state === 'denied') {
+          onDenied()
+          return
+        }
+        // 'granted' or 'prompt' — proceed to getCurrentPosition
+      } catch { /* Permissions API unavailable — fall through */ }
+    }
+
     navigator.geolocation.getCurrentPosition(sendLocation, onDenied, {
       enableHighAccuracy: false,
       timeout: 12000,
     })
   }
 
-  // Called from the modal "Try Again" button or automatically on retry loop
-  const retryLocation = () => {
-    requestLocation()
-  }
+  // Exposed for the modal "Allow & Continue" button
+  const retryLocation = () => { requestLocation() }
 
   const startLocationInterval = () => {
     if (_locationTimer) clearInterval(_locationTimer)
     _locationTimer = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(sendLocation, onDenied, {
-        enableHighAccuracy: false,
-        timeout: 12000,
-      })
+      // Only ping if permission is granted — don't re-trigger prompt mid-session
+      if (_permissionState === 'granted') {
+        navigator.geolocation.getCurrentPosition(sendLocation, () => {}, { timeout: 12000 })
+      }
     }, intervalSecs * 1000)
   }
 
@@ -103,7 +134,7 @@ export function useDeviceTracking() {
     _deviceId = localStorage.getItem(DEVICE_ID_KEY) || crypto.randomUUID()
     localStorage.setItem(DEVICE_ID_KEY, _deviceId)
 
-    // 2. Device info → server session
+    // 2. Register session with server
     const ua = navigator.userAgent
     const { browser, os } = parseUserAgent(ua)
     const screenSize = `${window.screen.width}x${window.screen.height}`
@@ -121,17 +152,17 @@ export function useDeviceTracking() {
       return
     }
 
-    // 3. First location request
-    requestLocation()
+    // 3. First location request — checks Permissions API before prompting
+    await requestLocation()
 
-    // 4. Start retry loop — fires every 8s while blocked so it picks up
-    //    immediately after the user grants permission in browser settings
+    // 4. Retry loop — only active while blocked, clears itself when granted.
+    //    Runs every 8s so permission changes in browser settings are detected quickly.
     _retryTimer = setInterval(() => {
       if (!locationBlocked.value) { clearInterval(_retryTimer!); _retryTimer = null; return }
       requestLocation()
     }, 8000)
 
-    // 5. Start the regular update interval (only sends when granted)
+    // 5. Interval for ongoing location updates
     startLocationInterval()
   }
 
