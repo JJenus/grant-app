@@ -98,7 +98,7 @@
 <script setup lang="ts">
 useSeo({
   title: 'About',
-  description: 'Learn about GrantPortal — our mission, review process, past recipients, and how we invest in ideas worth ₦250M that create lasting community impact.',
+  description: 'Learn about GrantPortal — our mission, review process, past recipients, and how we invest in ideas that create lasting community impact.',
   path: '/about',
 })
 

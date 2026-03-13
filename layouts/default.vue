@@ -66,13 +66,6 @@
       </div>
       <div class="border-t" style="border-color: rgba(255,255,255,0.08)">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-          <p class="text-xs" style="color: rgba(168,213,181,0.5)">
-            Disclaimer: we collect user data.
-          </p>
-        </div>
-      </div>
-      <div class="border-t" style="border-color: rgba(255,255,255,0.08)">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <p class="text-xs" style="color: rgba(168,213,181,0.5)">© {{ new Date().getFullYear() }} GrantPortal. All rights reserved.</p>
         </div>
       </div>
