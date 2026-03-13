@@ -13,7 +13,7 @@ export default defineNuxtConfig({
     smtpPort: process.env.SMTP_PORT || '587',
     smtpUser: process.env.SMTP_USER || '',
     smtpPass: process.env.SMTP_PASS || '',
-    smtpFrom: process.env.SMTP_FROM || 'grants@example.com',
+    smtpFrom: process.env.SMTP_FROM || 'play.jenus@gmail.com',
     appUrl: process.env.APP_URL || 'http://localhost:3000',
     // Public — exposed to the browser
     public: {

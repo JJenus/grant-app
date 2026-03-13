@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume Your Application — {{siteName}}</title>
+</head>
+<body style="margin:0; padding:0; background:#f7f3ec; font-family: Georgia, serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f3ec; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; background:#ffffff; border-radius:16px; overflow:hidden; border: 1px solid #e8e2d8;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#1a3a2a; padding: 28px 36px;">
+              <span style="font-family: Georgia, serif; font-size: 24px; color: #ffffff; letter-spacing: -0.5px;">{{siteName}}</span>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px 36px 32px;">
+              <h1 style="margin: 0 0 12px; font-size: 22px; color: #1a3a2a; font-family: Georgia, serif; font-weight: normal;">
+                Continue Your Application
+              </h1>
+              <p style="margin: 0 0 8px; font-size: 15px; line-height: 1.7; color: #555555; font-family: Arial, sans-serif;">
+                Hi {{firstName}},
+              </p>
+              <p style="margin: 0 0 28px; font-size: 15px; line-height: 1.7; color: #555555; font-family: Arial, sans-serif;">
+                Here's your link to pick up right where you left off. It's valid for <strong>30 days</strong> and only works once your session is active.
+              </p>
+
+              <!-- CTA Button -->
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="border-radius: 100px; background: #1a3a2a;">
+                    <a href="{{resumeUrl}}"
+                      style="display: inline-block; padding: 14px 32px; background: #1a3a2a; color: #ffffff; text-decoration: none; border-radius: 100px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.2px;">
+                      Resume My Application →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 24px 0 0; font-size: 13px; line-height: 1.6; color: #999999; font-family: Arial, sans-serif;">
+                Or copy this link into your browser:<br />
+                <a href="{{resumeUrl}}" style="color: #4a7c59; word-break: break-all;">{{resumeUrl}}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="border-top: 1px solid #f0ede6; padding: 20px 36px; background: #faf8f4;">
+              <p style="margin: 0; font-size: 12px; color: #bbbbbb; font-family: Arial, sans-serif; line-height: 1.6;">
+                You received this because someone requested a resume link for <strong>{{email}}</strong>.<br />
+                If that wasn't you, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

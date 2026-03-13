@@ -52,10 +52,11 @@
 definePageMeta({ layout: 'admin' })
 useSeo({ title: 'Settings', noIndex: true })
 
-const config = useRuntimeConfig()
+/*const config = useRuntimeConfig()
 const { appUrl, siteName, databaseUrl } = config.public
 
 console.log(`databaseUrl: ${databaseUrl}`)
+*/
 
 const form = reactive({ currency_symbol: '₦', currency_code: 'NGN', currency_name: 'Nigerian Naira' })
 const saving = ref(false)
